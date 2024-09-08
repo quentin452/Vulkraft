@@ -268,6 +268,7 @@ void ChunkDrawing::processChunkData(const std::vector<BlockVertex> &vertices,
                                     const std::vector<uint32_t> &indices,
                                     std::vector<BlockVertex> &globalVertices,
                                     std::vector<uint32_t> &globalIndices) {
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   size_t prevSizeIndices = globalIndices.size();
   globalIndices.resize(prevSizeIndices + indices.size());
 
@@ -281,6 +282,7 @@ void ChunkDrawing::processChunkData(const std::vector<BlockVertex> &vertices,
 }
 
 void ChunkDrawing::initChunks() {
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   initializeChunks();
   drawVisibleChunks();
 }
@@ -288,6 +290,7 @@ void ChunkDrawing::initChunks() {
 void ChunkDrawing::updateUniform(float &delta,
                                  std::vector<BlockVertex> &vertices,
                                  int &curBuffer) {
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   static bool shouldRedraw = false;
   static std::unordered_set<glm::ivec3> chunkIndexesToAdd;
 
