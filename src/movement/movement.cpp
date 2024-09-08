@@ -14,7 +14,7 @@
 
 #include <game_performance_profiler.hpp>
 std::vector<glm::ivec3> Movement::getPositionsToCheck(glm::vec3 position) {
-  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   std::vector<glm::ivec3> positions;
   for (int x = -1; x < 2; x++) {
     for (int y = -2; y < 2; y++) {
@@ -32,7 +32,7 @@ std::vector<glm::ivec3> Movement::getPositionsToCheck(glm::vec3 position) {
 Movement::CollisionResponseT
 Movement::canMove(const glm::vec3 &endPosition,
                   const std::unordered_map<glm::ivec3, Chunk *> &chunkMap) {
-  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   PlayerAABB playerBox;
   std::vector<glm::ivec3> positionsToCheck =
       Movement::getPositionsToCheck(endPosition);
@@ -69,7 +69,7 @@ Movement::canMove(const glm::vec3 &endPosition,
 Movement::CollisionResponseT Movement::resolveCollision(
     const glm::vec3 &position, const glm::vec3 &movement,
     const std::unordered_map<glm::ivec3, Chunk *> &chunkMap) {
-  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   Movement::CollisionResponseT response;
 
   const float MAX_LEN = 0.1f;
