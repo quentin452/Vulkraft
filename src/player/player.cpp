@@ -106,22 +106,16 @@ void Player::updatePhysics() {
 void Player::keyEventListener(GLFWwindow *window, float deltaT) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   movements.clear();
-
-  if (glfwGetKey(window, GLFW_KEY_A)) {
+  if (glfwGetKey(window, GLFW_KEY_A)) 
     movements.insert(MovementDirection::Left);
-  }
-  if (glfwGetKey(window, GLFW_KEY_D)) {
+  if (glfwGetKey(window, GLFW_KEY_D)) 
     movements.insert(MovementDirection::Right);
-  }
-  if (glfwGetKey(window, GLFW_KEY_S)) {
+  if (glfwGetKey(window, GLFW_KEY_S)) 
     movements.insert(MovementDirection::Backward);
-  }
-  if (glfwGetKey(window, GLFW_KEY_W)) {
+  if (glfwGetKey(window, GLFW_KEY_W)) 
     movements.insert(MovementDirection::Forward);
-  }
-  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) {
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) 
     movements.insert(MovementDirection::Down);
-  }
   if (glfwGetKey(window, GLFW_KEY_SPACE)) {
     if (gravity && (canJump || swimming)) {
       gravityVector = MovementDirection::Up * jumpFactor;
@@ -131,23 +125,18 @@ void Player::keyEventListener(GLFWwindow *window, float deltaT) {
       movements.insert(MovementDirection::Up);
     }
   }
-
   update(deltaT);
 }
 
 void Player::cursorPositionEventListener(GLFWwindow *window) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   static double old_xpos = 0, old_ypos = 0;
-
   double xpos, ypos;
-
   glfwGetCursorPos(window, &xpos, &ypos);
-
   double m_dx = old_xpos - xpos;
   double m_dy = old_ypos - ypos;
   old_xpos = xpos;
   old_ypos = ypos;
-
   camera.updateAngle(m_dx, m_dy);
 }
 
