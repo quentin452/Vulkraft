@@ -94,7 +94,7 @@ int main() {
   try {
     Globals::vulkraftApp.run();
   } catch (const std::exception &e) {
-    std::cerr << e.what() << std::endl;
+    LOGGER_THREAD(LogLevel::INFO, std::string(e.what()))
     return EXIT_FAILURE;
   }
   gamePerformanceProfiler.printWithLogMessageAsync();

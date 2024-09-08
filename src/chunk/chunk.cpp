@@ -256,11 +256,18 @@ void Chunk::buildBlockFace(int x, int y, int z, Direction dir,
   }
 }
 
-void Chunk::buildBlock(int x, int y, int z, bool opaqueOnly) {
+void Chunk::buildBlock(int x, int y, int z) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  std::vector<Direction> visibleFaces = getVisibleFaces(x, y, z, opaqueOnly);
-  for (const Direction &dir : visibleFaces) {
-    buildBlockFace(x, y, z, dir, opaqueOnly);
+  std::vector<Direction> visibleFacesOpaque = getVisibleFaces(x, y, z, true);
+  std::vector<Direction> visibleFacesNonOpaque =
+      getVisibleFaces(x, y, z, false);
+
+  for (const Direction &dir : visibleFacesOpaque) {
+    buildBlockFace(x, y, z, dir, true);
+  }
+
+  for (const Direction &dir : visibleFacesNonOpaque) {
+    buildBlockFace(x, y, z, dir, false);
   }
 }
 
@@ -369,17 +376,13 @@ void Chunk::build() {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   vertices.clear();
   indices.clear();
+  waterVertices.clear();
+  waterIndices.clear();
+
   for (int x = 0; x < CHUNK_WIDTH; ++x) {
     for (int y = 0; y < CHUNK_HEIGHT; ++y) {
       for (int z = 0; z < CHUNK_DEPTH; ++z) {
-        buildBlock(x, y, z, true);
-      }
-    }
-  }
-  for (int x = 0; x < CHUNK_WIDTH; ++x) {
-    for (int y = 0; y < CHUNK_HEIGHT; ++y) {
-      for (int z = 0; z < CHUNK_DEPTH; ++z) {
-        buildBlock(x, y, z, false);
+        buildBlock(x, y, z);
       }
     }
   }

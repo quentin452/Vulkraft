@@ -28,6 +28,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 else()
     remove_definitions(-DPERFORMANCE_MONITOR)
 endif()
+#add_definitions(-DPERFORMANCE_MONITOR)
 
 add_executable(main ${SOURCES})
 

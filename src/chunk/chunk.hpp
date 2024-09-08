@@ -98,7 +98,7 @@ private:
 
   void buildBlockFace(int x, int y, int z, Direction dir, bool opaqueOnly);
 
-  void buildBlock(int x, int y, int z, bool opaqueOnly);
+  void buildBlock(int x, int y, int z);
 
   void buildStructure(StructureMeta *meta);
 
