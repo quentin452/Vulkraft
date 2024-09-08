@@ -102,12 +102,12 @@ bool shouldSeeFace(Block self, Block other) {
 }
 std::vector<Direction> Chunk::getVisibleFaces(int x, int y, int z,
                                               bool opaqueOnly) {
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__);
   Block block = blocks[x][y][z];
   if (!block.type->isVisible() || (opaqueOnly && block.type->shouldBlend()) ||
       (!opaqueOnly && !block.type->shouldBlend())) {
     return {};
   }
-
   std::vector<Direction> faces;
   auto checkFace = [&](int nx, int ny, int nz, Direction dir) {
     if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_WIDTH || ny >= CHUNK_HEIGHT ||
@@ -135,7 +135,6 @@ std::vector<Direction> Chunk::getVisibleFaces(int x, int y, int z,
       faces.push_back(dir);
     }
   };
-
   if (SHOW_CHUNK_BORDER) {
     if (x == 0)
       faces.push_back(Direction::West);
@@ -150,14 +149,12 @@ std::vector<Direction> Chunk::getVisibleFaces(int x, int y, int z,
     if (z == CHUNK_DEPTH - 1)
       faces.push_back(Direction::North);
   }
-
   checkFace(x - 1, y, z, Direction::West);
   checkFace(x + 1, y, z, Direction::East);
   checkFace(x, y - 1, z, Direction::Down);
   checkFace(x, y + 1, z, Direction::Up);
   checkFace(x, y, z - 1, Direction::South);
   checkFace(x, y, z + 1, Direction::North);
-
   return faces;
 }
 
@@ -170,40 +167,30 @@ void Chunk::buildBlockFace(int x, int y, int z, Direction dir,
     return;
   glm::ivec3 pos = coordinates + glm::ivec3(x, y, z);
   glm::vec3 mat = block.type->getMaterialSettings();
-  // Helper lambda to add vertices and indices
+  auto getTextureOffset = [&](const glm::vec3 &vertex) {
+    return block.type->getTextureOffset(dir, vertex);
+  };
   auto addFaceData = [&](auto &vertexArray, auto &indexArray,
                          bool reversed = false) {
-    int index = vertexArray.size();
-    vertexArray.push_back({pos + face->a, face->norm,
-                           block.type->getTextureOffset(dir, face->a), mat});
-    vertexArray.push_back({pos + face->b, face->norm,
-                           block.type->getTextureOffset(dir, face->b), mat});
-    vertexArray.push_back({pos + face->c, face->norm,
-                           block.type->getTextureOffset(dir, face->c), mat});
-    vertexArray.push_back({pos + face->d, face->norm,
-                           block.type->getTextureOffset(dir, face->d), mat});
-    if (reversed) {
-      indexArray.push_back(index + 0);
-      indexArray.push_back(index + 2);
-      indexArray.push_back(index + 1);
-      indexArray.push_back(index + 0);
-      indexArray.push_back(index + 3);
-      indexArray.push_back(index + 2);
-    } else {
-      indexArray.push_back(index + 0);
-      indexArray.push_back(index + 1);
-      indexArray.push_back(index + 2);
-      indexArray.push_back(index + 0);
-      indexArray.push_back(index + 2);
-      indexArray.push_back(index + 3);
-    }
+    int index = static_cast<int>(vertexArray.size());
+    vertexArray.insert(
+        vertexArray.end(),
+        {{pos + face->a, face->norm, getTextureOffset(face->a), mat},
+         {pos + face->b, face->norm, getTextureOffset(face->b), mat},
+         {pos + face->c, face->norm, getTextureOffset(face->c), mat},
+         {pos + face->d, face->norm, getTextureOffset(face->d), mat}});
+    std::vector<int> indicesToAdd =
+        reversed ? std::vector<int>{index + 0, index + 2, index + 1,
+                                    index + 0, index + 3, index + 2}
+                 : std::vector<int>{index + 0, index + 1, index + 2,
+                                    index + 0, index + 2, index + 3};
+    indexArray.insert(indexArray.end(), indicesToAdd.begin(),
+                      indicesToAdd.end());
   };
-  // Add face data based on the opaqueOnly flag
   if (opaqueOnly) {
     addFaceData(vertices, indices);
   } else {
     addFaceData(waterVertices, waterIndices);
-    // Add the opposite face for water to avoid culling
     addFaceData(waterVertices, waterIndices, true);
   }
 }
