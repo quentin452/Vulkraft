@@ -122,7 +122,7 @@ bool ChunkDrawing::loadNewVisibleChunks(
   static glm::ivec3 oldChunkIndex(-1, 0, -1);
   glm::ivec3 baseChunkIndex =
       Chunk::findChunkIndex(player.getCamera().getPosition());
-  if (oldChunkIndex == baseChunkIndex) 
+  if (oldChunkIndex == baseChunkIndex)
     return false;
   oldChunkIndex = baseChunkIndex;
   for (int i = -VIEW_RANGE; i <= VIEW_RANGE; ++i) {
