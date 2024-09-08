@@ -172,7 +172,7 @@ void Chunk::buildBlockFace(int x, int y, int z, Direction dir,
   };
   auto addFaceData = [&](auto &vertexArray, auto &indexArray,
                          bool reversed = false) {
-    int index = static_cast<int>(vertexArray.size());
+    auto index = static_cast<int>(vertexArray.size());
     vertexArray.insert(
         vertexArray.end(),
         {{pos + face->a, face->norm, getTextureOffset(face->a), mat},
@@ -337,21 +337,18 @@ void Chunk::clear() {
 }
 
 std::vector<std::pair<glm::ivec3, Chunk *>> Chunk::getNeighbors() {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__);
   std::vector<std::pair<glm::ivec3, Chunk *>> neighbors;
-  const int xOff[] = {CHUNK_WIDTH, -CHUNK_WIDTH};
-  const int zOff[] = {CHUNK_DEPTH, -CHUNK_DEPTH};
-  for (int i = 0; i < 2; ++i) {
-    glm::ivec3 newVec = coordinates + glm::ivec3(xOff[i], 0, 0);
-    auto iter = chunkMap.find(newVec);
-    if (iter != chunkMap.end())
+  const glm::ivec3 offsets[] = {{CHUNK_WIDTH, 0, 0},
+                                {-CHUNK_WIDTH, 0, 0},
+                                {0, 0, CHUNK_DEPTH},
+                                {0, 0, -CHUNK_DEPTH}};
+  for (const auto &offset : offsets) {
+    glm::ivec3 neighborPos = coordinates + offset;
+    auto iter = chunkMap.find(neighborPos);
+    if (iter != chunkMap.end()) {
       neighbors.push_back(*iter);
-  }
-  for (int i = 0; i < 2; ++i) {
-    glm::ivec3 newVec = coordinates + glm::ivec3(0, 0, zOff[i]);
-    auto iter = chunkMap.find(newVec);
-    if (iter != chunkMap.end())
-      neighbors.push_back(*iter);
+    }
   }
   return neighbors;
 }
