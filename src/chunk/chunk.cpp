@@ -76,27 +76,22 @@ std::array<VkVertexInputAttributeDescription, 4>
 BlockVertex::getAttributeDescriptions() {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
-
   attributeDescriptions[0].binding = 0;
   attributeDescriptions[0].location = 0;
   attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
   attributeDescriptions[0].offset = offsetof(BlockVertex, pos);
-
   attributeDescriptions[1].binding = 0;
   attributeDescriptions[1].location = 1;
   attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
   attributeDescriptions[1].offset = offsetof(BlockVertex, norm);
-
   attributeDescriptions[2].binding = 0;
   attributeDescriptions[2].location = 2;
   attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
   attributeDescriptions[2].offset = offsetof(BlockVertex, tex);
-
   attributeDescriptions[3].binding = 0;
   attributeDescriptions[3].location = 3;
   attributeDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
   attributeDescriptions[3].offset = offsetof(BlockVertex, mat);
-
   return attributeDescriptions;
 }
 
@@ -105,167 +100,131 @@ bool shouldSeeFace(Block self, Block other) {
   return !other.type->isOpaque &&
          (!self.type->shouldBlend() || self.type != other.type);
 }
-
 std::vector<Direction> Chunk::getVisibleFaces(int x, int y, int z,
                                               bool opaqueOnly) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__);
   Block block = blocks[x][y][z];
-
+  // Early exit if block is not visible or blending conditions are not met
+  if (!block.type->isVisible() || (opaqueOnly && block.type->shouldBlend()) ||
+      (!opaqueOnly && !block.type->shouldBlend())) {
+    return {};
+  }
   std::vector<Direction> faces;
-
+  auto checkFace = [&](int nx, int ny, int nz, Direction dir) {
+    if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_WIDTH || ny >= CHUNK_HEIGHT ||
+        nz >= CHUNK_DEPTH) {
+      glm::ivec3 adjChunkPos = coordinates;
+      if (nx < 0) {
+        adjChunkPos.x -= CHUNK_WIDTH;
+        nx = CHUNK_WIDTH - 1;
+      }
+      if (nx >= CHUNK_WIDTH) {
+        adjChunkPos.x += CHUNK_WIDTH;
+        nx = 0;
+      }
+      if (ny < 0) {
+        adjChunkPos.y -= CHUNK_HEIGHT;
+        ny = CHUNK_HEIGHT - 1;
+      }
+      if (ny >= CHUNK_HEIGHT) {
+        adjChunkPos.y += CHUNK_HEIGHT;
+        ny = 0;
+      }
+      if (nz < 0) {
+        adjChunkPos.z -= CHUNK_DEPTH;
+        nz = CHUNK_DEPTH - 1;
+      }
+      if (nz >= CHUNK_DEPTH) {
+        adjChunkPos.z += CHUNK_DEPTH;
+        nz = 0;
+      }
+      auto iter = chunkMap.find(adjChunkPos);
+      if (iter != chunkMap.end() &&
+          shouldSeeFace(block, iter->second->blocks[nx][ny][nz])) {
+        faces.push_back(dir);
+      }
+    } else if (shouldSeeFace(block, blocks[nx][ny][nz])) {
+      faces.push_back(dir);
+    }
+  };
+  // Check border faces if SHOW_CHUNK_BORDER is true
   if (SHOW_CHUNK_BORDER) {
-    if (x == 0 &&
-        (y == 0 || z == 0 || y == CHUNK_HEIGHT - 1 || z == CHUNK_DEPTH - 1))
+    if (x == 0)
       faces.push_back(Direction::West);
-    if (y == 0 &&
-        (x == 0 || z == 0 || x == CHUNK_WIDTH - 1 || z == CHUNK_DEPTH - 1))
+    if (y == 0)
       faces.push_back(Direction::Down);
-    if (z == 0 &&
-        (x == 0 || y == 0 || x == CHUNK_WIDTH - 1 || y == CHUNK_HEIGHT - 1))
+    if (z == 0)
       faces.push_back(Direction::South);
-    if (x == CHUNK_WIDTH - 1 &&
-        (y == 0 || z == 0 || y == CHUNK_HEIGHT - 1 || z == CHUNK_DEPTH - 1))
+    if (x == CHUNK_WIDTH - 1)
       faces.push_back(Direction::East);
-    if (y == CHUNK_HEIGHT - 1 &&
-        (x == 0 || z == 0 || x == CHUNK_WIDTH - 1 || z == CHUNK_DEPTH - 1))
+    if (y == CHUNK_HEIGHT - 1)
       faces.push_back(Direction::Up);
-    if (z == CHUNK_DEPTH - 1 &&
-        (x == 0 || y == 0 || x == CHUNK_WIDTH - 1 || y == CHUNK_HEIGHT - 1))
+    if (z == CHUNK_DEPTH - 1)
       faces.push_back(Direction::North);
   }
-
-  if (!block.type->isVisible())
-    return faces;
-  if (opaqueOnly && block.type->shouldBlend())
-    return faces;
-  if (!opaqueOnly && !block.type->shouldBlend())
-    return faces;
-  if (x == 0) {
-    glm::ivec3 wIndex(coordinates.x - CHUNK_WIDTH, coordinates.y,
-                      coordinates.z);
-    auto iter = chunkMap.find(wIndex);
-    if (iter != chunkMap.end() &&
-        shouldSeeFace(block, iter->second->blocks[CHUNK_WIDTH - 1][y][z]))
-      faces.push_back(Direction::West);
-  } else if (shouldSeeFace(block, blocks[x - 1][y][z]))
-    faces.push_back(Direction::West);
-
-  if (y == 0 || shouldSeeFace(block, blocks[x][y - 1][z]))
-    faces.push_back(Direction::Down);
-
-  if (z == 0) {
-    glm::ivec3 sIndex(coordinates.x, coordinates.y,
-                      coordinates.z - CHUNK_DEPTH);
-    auto iter = chunkMap.find(sIndex);
-    if (iter != chunkMap.end() &&
-        shouldSeeFace(block, iter->second->blocks[x][y][CHUNK_DEPTH - 1]))
-      faces.push_back(Direction::South);
-  } else if (shouldSeeFace(block, blocks[x][y][z - 1]))
-    faces.push_back(Direction::South);
-
-  if (x == CHUNK_WIDTH - 1) {
-    glm::ivec3 eIndex(coordinates.x + CHUNK_WIDTH, coordinates.y,
-                      coordinates.z);
-    auto iter = chunkMap.find(eIndex);
-    if (iter != chunkMap.end() &&
-        shouldSeeFace(block, iter->second->blocks[0][y][z]))
-      faces.push_back(Direction::East);
-  } else if (shouldSeeFace(block, blocks[x + 1][y][z]))
-    faces.push_back(Direction::East);
-
-  if (y == CHUNK_HEIGHT - 1 || shouldSeeFace(block, blocks[x][y + 1][z]))
-    faces.push_back(Direction::Up);
-
-  if (z == CHUNK_DEPTH - 1) {
-    glm::ivec3 nIndex(coordinates.x, coordinates.y,
-                      coordinates.z + CHUNK_DEPTH);
-    auto iter = chunkMap.find(nIndex);
-    if (iter != chunkMap.end() &&
-        shouldSeeFace(block, iter->second->blocks[x][y][0]))
-      faces.push_back(Direction::North);
-  } else if (shouldSeeFace(block, blocks[x][y][z + 1]))
-    faces.push_back(Direction::North);
-
+  // Check adjacent blocks
+  checkFace(x - 1, y, z, Direction::West);
+  checkFace(x + 1, y, z, Direction::East);
+  checkFace(x, y - 1, z, Direction::Down);
+  checkFace(x, y + 1, z, Direction::Up);
+  checkFace(x, y, z - 1, Direction::South);
+  checkFace(x, y, z + 1, Direction::North);
   return faces;
 }
-
 void Chunk::buildBlockFace(int x, int y, int z, Direction dir,
                            bool opaqueOnly) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__);
   Block block = blocks[x][y][z];
   BlockFace *face = block.getFace(dir);
-  if (face == NULL)
+  if (!face)
     return;
-
   glm::ivec3 pos = coordinates + glm::ivec3(x, y, z);
   glm::vec3 mat = block.type->getMaterialSettings();
-
+  // Helper lambda to add vertices and indices
+  auto addFaceData = [&](auto &vertexArray, auto &indexArray,
+                         bool reversed = false) {
+    int index = vertexArray.size();
+    vertexArray.push_back({pos + face->a, face->norm,
+                           block.type->getTextureOffset(dir, face->a), mat});
+    vertexArray.push_back({pos + face->b, face->norm,
+                           block.type->getTextureOffset(dir, face->b), mat});
+    vertexArray.push_back({pos + face->c, face->norm,
+                           block.type->getTextureOffset(dir, face->c), mat});
+    vertexArray.push_back({pos + face->d, face->norm,
+                           block.type->getTextureOffset(dir, face->d), mat});
+    if (reversed) {
+      indexArray.push_back(index + 0);
+      indexArray.push_back(index + 2);
+      indexArray.push_back(index + 1);
+      indexArray.push_back(index + 0);
+      indexArray.push_back(index + 3);
+      indexArray.push_back(index + 2);
+    } else {
+      indexArray.push_back(index + 0);
+      indexArray.push_back(index + 1);
+      indexArray.push_back(index + 2);
+      indexArray.push_back(index + 0);
+      indexArray.push_back(index + 2);
+      indexArray.push_back(index + 3);
+    }
+  };
+  // Add face data based on the opaqueOnly flag
   if (opaqueOnly) {
-    int index = vertices.size();
-    vertices.push_back({pos + face->a, face->norm,
-                        block.type->getTextureOffset(dir, face->a), mat});
-    vertices.push_back({pos + face->b, face->norm,
-                        block.type->getTextureOffset(dir, face->b), mat});
-    vertices.push_back({pos + face->c, face->norm,
-                        block.type->getTextureOffset(dir, face->c), mat});
-    vertices.push_back({pos + face->d, face->norm,
-                        block.type->getTextureOffset(dir, face->d), mat});
-
-    indices.push_back(index + 0);
-    indices.push_back(index + 1);
-    indices.push_back(index + 2);
-    indices.push_back(index + 0);
-    indices.push_back(index + 2);
-    indices.push_back(index + 3);
+    addFaceData(vertices, indices);
   } else {
-    int index = waterVertices.size();
-    waterVertices.push_back({pos + face->a, face->norm,
-                             block.type->getTextureOffset(dir, face->a), mat});
-    waterVertices.push_back({pos + face->b, face->norm,
-                             block.type->getTextureOffset(dir, face->b), mat});
-    waterVertices.push_back({pos + face->c, face->norm,
-                             block.type->getTextureOffset(dir, face->c), mat});
-    waterVertices.push_back({pos + face->d, face->norm,
-                             block.type->getTextureOffset(dir, face->d), mat});
-
-    waterIndices.push_back(index + 0);
-    waterIndices.push_back(index + 1);
-    waterIndices.push_back(index + 2);
-    waterIndices.push_back(index + 0);
-    waterIndices.push_back(index + 2);
-    waterIndices.push_back(index + 3);
-
-    // Draw the face also in the opposite direction to avoid culling
-    // (otherwise the water surface is not visible while swimming)
-    index = waterVertices.size();
-    waterVertices.push_back({pos + face->a, face->norm,
-                             block.type->getTextureOffset(dir, face->a), mat});
-    waterVertices.push_back({pos + face->b, face->norm,
-                             block.type->getTextureOffset(dir, face->b), mat});
-    waterVertices.push_back({pos + face->c, face->norm,
-                             block.type->getTextureOffset(dir, face->c), mat});
-    waterVertices.push_back({pos + face->d, face->norm,
-                             block.type->getTextureOffset(dir, face->d), mat});
-
-    waterIndices.push_back(index + 0);
-    waterIndices.push_back(index + 2);
-    waterIndices.push_back(index + 1);
-    waterIndices.push_back(index + 0);
-    waterIndices.push_back(index + 3);
-    waterIndices.push_back(index + 2);
+    addFaceData(waterVertices, waterIndices);
+    // Add the opposite face for water to avoid culling
+    addFaceData(waterVertices, waterIndices, true);
   }
 }
-
 void Chunk::buildBlock(int x, int y, int z) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   std::vector<Direction> visibleFacesOpaque = getVisibleFaces(x, y, z, true);
   std::vector<Direction> visibleFacesNonOpaque =
       getVisibleFaces(x, y, z, false);
-
   for (const Direction &dir : visibleFacesOpaque) {
     buildBlockFace(x, y, z, dir, true);
   }
-
   for (const Direction &dir : visibleFacesNonOpaque) {
     buildBlockFace(x, y, z, dir, false);
   }
@@ -295,23 +254,35 @@ int Chunk::sampleHeight(int x, int z, float depth) {
 }
 
 void Chunk::initTerrain() {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__);
+  // Precompute the sample height values to avoid multiple calls
+  std::vector<int> midHeights(CHUNK_WIDTH * CHUNK_DEPTH);
+  std::vector<int> maxHeights(CHUNK_WIDTH * CHUNK_DEPTH);
   for (int x = 0; x < CHUNK_WIDTH; ++x) {
     for (int z = 0; z < CHUNK_DEPTH; ++z) {
+      int index = x * CHUNK_DEPTH + z;
+      midHeights[index] = sampleHeight(x, z, 0.4);
+      maxHeights[index] = sampleHeight(x, z, 1.0);
+    }
+  }
+  for (int x = 0; x < CHUNK_WIDTH; ++x) {
+    for (int z = 0; z < CHUNK_DEPTH; ++z) {
+      int midY = midHeights[x * CHUNK_DEPTH + z];
+      int maxY = maxHeights[x * CHUNK_DEPTH + z];
+      // Set bedrock at the bottom layer
       blocks[x][0][z].type = (BlockType *)BEDROCK;
-      int midY = sampleHeight(x, z, 0.4);
+      // Fill stone
       for (int y = 1; y < midY; ++y) {
         blocks[x][y][z].type = (BlockType *)STONE;
       }
-      int maxY = sampleHeight(x, z, 1.0);
+      // Fill dirt
       for (int y = midY; y < maxY; ++y) {
         blocks[x][y][z].type = (BlockType *)DIRT;
       }
-      if (maxY < WATER_LEVEL) {
-        blocks[x][maxY][z].type = (BlockType *)SAND;
-      } else {
-        blocks[x][maxY][z].type = (BlockType *)GRASS;
-      }
+      // Set top layer based on height
+      blocks[x][maxY][z].type =
+          (maxY < WATER_LEVEL) ? (BlockType *)SAND : (BlockType *)GRASS;
+      // Fill water above the terrain
       for (int y = maxY + 1; y <= WATER_LEVEL; ++y) {
         blocks[x][y][z].type = (BlockType *)WATER;
       }
@@ -320,18 +291,15 @@ void Chunk::initTerrain() {
 }
 
 void Chunk::initPlants() {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
+  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__);
   for (int x = 2; x < CHUNK_WIDTH - 2; ++x) {
     for (int z = 2; z < CHUNK_DEPTH - 2; ++z) {
-      double noise = (float)rand() / (float)RAND_MAX;
-      noise = noise * 2 - 1;
+      double noise = (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0;
       int y = sampleHeight(x, z, 1.0);
-      if (noise < -0.95) {
-        if (blocks[x][y][z].type == (BlockType *)GRASS) {
+      if (blocks[x][y][z].type == (BlockType *)GRASS) {
+        if (noise < -0.95) {
           blocks[x][y + 1][z].type = (BlockType *)BUSH;
-        }
-      } else if (noise > 0.95) {
-        if (blocks[x][y][z].type == (BlockType *)GRASS) {
+        } else if (noise > 0.95) {
           glm::ivec3 base(x, y + 1, z);
           StructureMeta meta;
           Tree::generate(&meta, base);
@@ -378,7 +346,6 @@ void Chunk::build() {
   indices.clear();
   waterVertices.clear();
   waterIndices.clear();
-
   for (int x = 0; x < CHUNK_WIDTH; ++x) {
     for (int y = 0; y < CHUNK_HEIGHT; ++y) {
       for (int z = 0; z < CHUNK_DEPTH; ++z) {
@@ -411,7 +378,6 @@ std::vector<std::pair<glm::ivec3, Chunk *>> Chunk::getNeighbors() {
     if (iter != chunkMap.end())
       neighbors.push_back(*iter);
   }
-
   return neighbors;
 }
 
@@ -424,17 +390,18 @@ void Chunk::setSeed(unsigned int seedIn) {
 std::vector<glm::ivec3> Chunk::getBlockPositions() {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   std::vector<glm::ivec3> positions;
-
-  for (int x = 0; x < CHUNK_WIDTH; x++) {
-    for (int y = 0; y < CHUNK_HEIGHT; y++) {
-      for (int z = 0; z < CHUNK_DEPTH; z++) {
-        if (blocks[x][y][z].type->isSolid) {
+  positions.reserve(CHUNK_WIDTH * CHUNK_HEIGHT *
+                    CHUNK_DEPTH);
+  for (int x = 0; x < CHUNK_WIDTH; ++x) {
+    for (int y = 0; y < CHUNK_HEIGHT; ++y) {
+      for (int z = 0; z < CHUNK_DEPTH; ++z) {
+        const Block &block = blocks[x][y][z];
+        if (block.type->isSolid) {
           positions.push_back(coordinates + glm::ivec3(x, y, z));
         }
       }
     }
   }
-
   return positions;
 }
 
@@ -477,16 +444,15 @@ glm::ivec3 Chunk::findBlockIndex(glm::vec3 position) {
   return glm::ivec3(floor(position.x - chunkIndex.x), floor(position.y),
                     floor(position.z - chunkIndex.z));
 }
-
 bool Chunk::destroyLocal(glm::ivec3 position) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  Block *block = &blocks[position.x][position.y][position.z];
-  if (!block->type->isBreakable)
+  Block &block = blocks[position.x][position.y][position.z];
+  if (!block.type->isBreakable)
     return false;
-  block->type = (BlockType *)AIR;
-  if (blocks[position.x][position.y + 1][position.z].type == BUSH) {
-    blocks[position.x][position.y + 1][position.z].type = (BlockType *)AIR;
-  }
+  block.type = (BlockType *)AIR;
+  Block &aboveBlock = blocks[position.x][position.y + 1][position.z];
+  if (aboveBlock.type == BUSH)
+    aboveBlock.type = (BlockType *)AIR;
   return true;
 }
 

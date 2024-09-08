@@ -109,6 +109,8 @@ private:
   void initPlants();
 
   void initLogo();
+  void initializeBlocks();
+  
 
 public:
   static siv::PerlinNoise::seed_type seed;
