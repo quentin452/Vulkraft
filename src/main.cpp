@@ -72,6 +72,7 @@ const bool enableValidationLayers = true;
 void InitThreadedLoggerForCPP(const std::string &ProjectDirectory,
                               const std::string &LogFileName,
                               const std::string &GameSaveFolder) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
 #pragma warning(push)
 #pragma warning(disable : 4996) // Disable warning for getenv
 #ifdef _WIN32
@@ -102,6 +103,7 @@ VkResult CreateDebugUtilsMessengerEXT(
     VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
     const VkAllocationCallbacks *pAllocator,
     VkDebugUtilsMessengerEXT *pDebugMessenger) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
       instance, "vkCreateDebugUtilsMessengerEXT");
   if (func != nullptr) {
@@ -114,6 +116,7 @@ VkResult CreateDebugUtilsMessengerEXT(
 void DestroyDebugUtilsMessengerEXT(VkInstance instance,
                                    VkDebugUtilsMessengerEXT debugMessenger,
                                    const VkAllocationCallbacks *pAllocator) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
       instance, "vkDestroyDebugUtilsMessengerEXT");
   if (func != nullptr) {
@@ -295,6 +298,7 @@ private:
   }
 
   void createInstance() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     if (enableValidationLayers && !checkValidationLayerSupport()) {
       throw std::runtime_error(
           "validation layers requested, but not available!");
@@ -336,6 +340,7 @@ private:
   }
 
   std::vector<const char *> getRequiredExtensions() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -351,6 +356,7 @@ private:
   }
 
   bool checkValidationLayerSupport() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -377,6 +383,7 @@ private:
 
   void populateDebugMessengerCreateInfo(
       VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     createInfo.messageSeverity =
@@ -399,6 +406,7 @@ private:
   }
 
   void setupDebugMessenger() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     if (!enableValidationLayers)
       return;
 
@@ -412,6 +420,7 @@ private:
   }
 
   void createSurface() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface) !=
         VK_SUCCESS) {
       throw std::runtime_error("failed to create window surface!");
@@ -419,6 +428,7 @@ private:
   }
 
   void pickPhysicalDevice() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -443,6 +453,7 @@ private:
   }
 
   bool isDeviceSuitable(VkPhysicalDevice device) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     QueueFamilyIndices indices = findQueueFamilies(device);
 
     bool extensionsSupported = checkDeviceExtensionSupport(device);
@@ -462,6 +473,7 @@ private:
   }
 
   QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
@@ -496,6 +508,7 @@ private:
   }
 
   bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
                                          nullptr);
@@ -515,6 +528,7 @@ private:
   }
 
   SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     SwapChainSupportDetails details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface,
@@ -544,6 +558,7 @@ private:
   }
 
   VkSampleCountFlagBits getMaxUsableSampleCount() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
 
@@ -573,6 +588,7 @@ private:
   }
 
   void createLogicalDevice() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -623,6 +639,7 @@ private:
   }
 
   void createSwapChain() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     SwapChainSupportDetails swapChainSupport =
         querySwapChainSupport(physicalDevice);
 
@@ -682,6 +699,7 @@ private:
 
   VkSurfaceFormatKHR chooseSwapSurfaceFormat(
       const std::vector<VkSurfaceFormatKHR> &availableFormats) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     for (const auto &availableFormat : availableFormats) {
       if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
           availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -694,6 +712,7 @@ private:
 
   VkPresentModeKHR chooseSwapPresentMode(
       const std::vector<VkPresentModeKHR> &availablePresentModes) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     for (const auto &availablePresentMode : availablePresentModes) {
       if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
         return availablePresentMode;
@@ -704,6 +723,7 @@ private:
   }
 
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     if (capabilities.currentExtent.width !=
         std::numeric_limits<uint32_t>::max()) {
       return capabilities.currentExtent;
@@ -726,6 +746,7 @@ private:
   }
 
   void createImageViews() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     swapChainImageViews.resize(swapChainImages.size());
 
     for (uint32_t i = 0; i < swapChainImages.size(); i++) {
@@ -738,6 +759,7 @@ private:
   VkImageView createImageView(VkImage image, VkFormat format,
                               VkImageAspectFlags aspectFlags,
                               uint32_t mipLevels) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image;
@@ -759,6 +781,7 @@ private:
   }
 
   void createRenderPass() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = swapChainImageFormat;
     colorAttachment.samples = msaaSamples;
@@ -838,9 +861,13 @@ private:
     }
   }
 
-  void createDescriptorSetLayouts() { createDescriptorSetLayout(); }
+  void createDescriptorSetLayouts() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
+    createDescriptorSetLayout();
+  }
 
   void createDescriptorSetLayout() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkDescriptorSetLayoutBinding vertexUboLayoutBinding{};
     vertexUboLayoutBinding.binding = 0;
     vertexUboLayoutBinding.descriptorCount = 1;
@@ -876,9 +903,13 @@ private:
     }
   }
 
-  void createPipelines() { createGraphicsPipeline(); }
+  void createPipelines() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
+    createGraphicsPipeline();
+  }
 
   void createGraphicsPipeline() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     auto vertShaderCode = readFile("shaders/vert.spv");
     auto fragShaderCode = readFile("shaders/frag.spv");
 
@@ -1027,6 +1058,7 @@ private:
   }
 
   static std::vector<char> readFile(const std::string &filename) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
@@ -1045,6 +1077,7 @@ private:
   }
 
   VkShaderModule createShaderModule(const std::vector<char> &code) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size();
@@ -1060,6 +1093,7 @@ private:
   }
 
   void createFramebuffers() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     swapChainFramebuffers.resize(swapChainImageViews.size());
 
     for (size_t i = 0; i < swapChainImageViews.size(); i++) {
@@ -1084,6 +1118,7 @@ private:
   }
 
   void createCommandPool() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
 
     VkCommandPoolCreateInfo poolInfo{};
@@ -1098,6 +1133,7 @@ private:
   }
 
   void createColorResources() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkFormat colorFormat = swapChainImageFormat;
 
     createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples,
@@ -1111,6 +1147,7 @@ private:
   }
 
   void createDepthResources() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkFormat depthFormat = findDepthFormat();
 
     createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples,
@@ -1123,6 +1160,7 @@ private:
   }
 
   VkFormat findDepthFormat() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     return findSupportedFormat({VK_FORMAT_D32_SFLOAT,
                                 VK_FORMAT_D32_SFLOAT_S8_UINT,
                                 VK_FORMAT_D24_UNORM_S8_UINT},
@@ -1133,6 +1171,7 @@ private:
   VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates,
                                VkImageTiling tiling,
                                VkFormatFeatureFlags features) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     for (VkFormat format : candidates) {
       VkFormatProperties props;
       vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
@@ -1150,11 +1189,13 @@ private:
   }
 
   bool hasStencilComponent(VkFormat format) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
            format == VK_FORMAT_D24_UNORM_S8_UINT;
   }
 
   void createTextureImage() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight,
                                 &texChannels, STBI_rgb_alpha);
@@ -1206,6 +1247,7 @@ private:
 
   void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth,
                        int32_t texHeight, uint32_t mipLevels) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     // Check if image format supports linear blitting
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat,
@@ -1295,6 +1337,7 @@ private:
                    VkImageTiling tiling, VkImageUsageFlags usage,
                    VkMemoryPropertyFlags properties, VkImage &image,
                    VkDeviceMemory &imageMemory) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -1334,6 +1377,7 @@ private:
   void transitionImageLayout(VkImage image, VkFormat format,
                              VkImageLayout oldLayout, VkImageLayout newLayout,
                              uint32_t mipLevels) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
     VkImageMemoryBarrier barrier{};
@@ -1378,6 +1422,7 @@ private:
 
   void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
                          uint32_t height) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
     VkBufferImageCopy region{};
@@ -1398,11 +1443,13 @@ private:
   }
 
   void createTextureImageView() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
                                        VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
   }
 
   void createTextureSampler() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(physicalDevice, &properties);
 
@@ -1431,6 +1478,7 @@ private:
   }
 
   void createVertexBuffer() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkDeviceSize bufferSize = sizeof(BlockVertex) * vertices.size();
 
     vertexBuffer.resize(MAX_FRAMES_IN_FLIGHT);
@@ -1492,6 +1540,7 @@ private:
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                     VkMemoryPropertyFlags properties, VkBuffer &buffer,
                     VkDeviceMemory &bufferMemory) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
@@ -1521,6 +1570,7 @@ private:
 
   uint32_t findMemoryType(uint32_t typeFilter,
                           VkMemoryPropertyFlags properties) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
@@ -1536,6 +1586,7 @@ private:
   }
 
   void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
     VkBufferCopy copyRegion{};
@@ -1546,6 +1597,7 @@ private:
   }
 
   VkCommandBuffer beginSingleTimeCommands() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -1565,6 +1617,7 @@ private:
   }
 
   void endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -1579,6 +1632,7 @@ private:
   }
 
   void createIndexBuffer() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
 
     indexBuffer.resize(MAX_FRAMES_IN_FLIGHT);
@@ -1640,6 +1694,7 @@ private:
   }
 
   void createUniformBuffers() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkDeviceSize vertexBufferSize = sizeof(VertexUniformBufferObject);
     VkDeviceSize fragmentBufferSize = sizeof(FragmentUniformBufferObject);
 
@@ -1661,6 +1716,7 @@ private:
   }
 
   void createDescriptorPool() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     std::array<VkDescriptorPoolSize, 3> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
@@ -1681,9 +1737,13 @@ private:
     }
   }
 
-  void createDescriptorSets() { createDescriptorSet(); }
+  void createDescriptorSets() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
+    createDescriptorSet();
+  }
 
   void createDescriptorSet() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT,
                                                descriptorSetLayout);
 
@@ -1749,6 +1809,7 @@ private:
   }
 
   void createCommandBuffers() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
     VkCommandBufferAllocateInfo allocInfo{};
@@ -1764,6 +1825,7 @@ private:
   }
 
   void createSyncObjects() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -1789,6 +1851,7 @@ private:
   }
 
   void mainLoop() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     setTimeNoon();
     toggleCursor();
 
@@ -1801,6 +1864,7 @@ private:
   }
 
   void drawFrame() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE,
                     UINT64_MAX);
 
@@ -1872,6 +1936,7 @@ private:
   }
 
   void updateUniformBuffer(uint32_t currentImage) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     static auto startTime = std::chrono::high_resolution_clock::now();
     static float lastTime = 0.0f;
 
@@ -1988,6 +2053,7 @@ private:
   }
 
   void updateVertexBuffer() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkDeviceSize bufferSize = sizeof(BlockVertex) * vertices.size();
 
     VkBuffer stagingBuffer;
@@ -2039,6 +2105,7 @@ private:
   }
 
   void updateIndexBuffer() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
 
     VkBuffer stagingBuffer;
@@ -2093,6 +2160,7 @@ private:
 
   void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex,
                            int currentFrame) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -2159,6 +2227,7 @@ private:
   }
 
   void recreateSwapChain() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     int width = 0, height = 0;
     glfwGetFramebufferSize(window, &width, &height);
 
@@ -2181,6 +2250,7 @@ private:
   }
 
   void cleanupSwapChain() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     vkDestroyImageView(device, depthImageView, nullptr);
     vkDestroyImage(device, depthImage, nullptr);
     vkFreeMemory(device, depthImageMemory, nullptr);
@@ -2206,6 +2276,7 @@ private:
   }
 
   void cleanup() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     cleanupSwapChain();
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -2263,13 +2334,20 @@ private:
   //// ===== Custom control functions =====
 
   // Moves the sun in the higher position
-  void setTimeNoon() { sunDir = glm::vec3(0, 1, 0); }
+  void setTimeNoon() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
+    sunDir = glm::vec3(0, 1, 0);
+  }
 
   // Moves the sun in the lower position
-  void setTimeMidnight() { sunDir = glm::vec3(0, -1, 0); }
+  void setTimeMidnight() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
+    sunDir = glm::vec3(0, -1, 0);
+  }
 
   // Toggles [cursorEnabled] and the ability to interact with the application
   void toggleCursor() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     if (cursorEnabled) {
       cursorEnabled = false;
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -2282,6 +2360,7 @@ private:
   // Reacts to a mouse click event (if any)
   // Returns true if the event caused some update
   bool handleMouseClicks(std::unordered_set<glm::ivec3> *chunkIndexesToAdd) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     static bool leftPressed = false;
     static bool rightPressed = false;
     static bool middlePressed = false;
@@ -2323,6 +2402,7 @@ private:
   // looking at Returns true if a block was destroyed or placed
   bool handleMouseClick(int button,
                         std::unordered_set<glm::ivec3> *chunkIndexesToAdd) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     glm::ivec3 target;
     glm::vec3 norm;
     if (!rayTracePlayer(target, norm))
@@ -2381,6 +2461,7 @@ private:
   // the details of the hit
   // Returns true if a hit occurred
   bool rayTracePlayer(glm::ivec3 &target, glm::vec3 &norm) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     Camera camera = player.getCamera();
     glm::vec3 position = camera.getPosition();
     glm::vec3 direction = camera.getDirection() * -1.f;
@@ -2398,6 +2479,7 @@ private:
   // Returns true if [emptyBlock] was filled
   bool spreadWater(Chunk *emptyChunk, Chunk *sourceChunk, glm::ivec3 emptyBlock,
                    glm::ivec3 sourceBlock) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     if (!sourceChunk->isBlockWaterLocal(sourceBlock))
       return false;
     emptyChunk->spreadWater(emptyBlock);
@@ -2408,6 +2490,7 @@ private:
   // Returns true if the player entered a new chunk
   bool loadNewVisibleChunks(std::unordered_set<glm::ivec3> *chunkIndexesToAdd,
                             std::unordered_set<Chunk *> *toBuild) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     static glm::ivec3 oldChunkIndex(
         -1, 0, -1); // Any value different from (0, 0, 0) should be fine
     glm::ivec3 baseChunkIndex =
@@ -2444,6 +2527,7 @@ private:
   // Builds the first chunk in [toBuild]
   // Returns false if no build occurred
   bool buildNextChunk(std::unordered_set<Chunk *> *toBuild) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     if (toBuild->empty())
       return false;
 
@@ -2456,6 +2540,7 @@ private:
 
   // Initializes and builds the first chunks
   void initializeChunks() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     const glm::ivec3 baseChunkIndex = glm::ivec3(0, 0, 0);
 
     Chunk::setSeed(rand());
@@ -2469,6 +2554,7 @@ private:
 
   // Gets the visible chunks from [chunkMap] and draws them
   void drawVisibleChunks() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     const glm::ivec3 baseChunkIndex =
         Chunk::findChunkIndex(player.getCamera().getPosition());
     std::vector<Chunk *> visibleChunks;
@@ -2493,6 +2579,7 @@ private:
 
   /// Clears the global vertex and index buffers
   void clearBuffers() {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     vertices.clear();
     indices.clear();
     waterVertices.clear();
@@ -2503,6 +2590,7 @@ private:
 
   // Inserts [newChunk] vertices and indices in the global buffers
   void drawChunk(Chunk *newChunk) {
+    PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
     std::vector<BlockVertex> curVertices = newChunk->getVertices();
     std::vector<uint32_t> curIndices = newChunk->getIndices();
 
@@ -2525,7 +2613,8 @@ private:
 };
 
 int main() {
-  InitThreadedLoggerForCPP(_exe_game, _exe_game, _exe_game);
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
+  InitThreadedLoggerForCPP(TITLE, TITLE, TITLE);
 #ifdef DEBUG
   LOGGER_THREAD(LogLevel::INFO, "Starting Catz Voxel Engine in Debug Mode...");
 #else

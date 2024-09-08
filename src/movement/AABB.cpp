@@ -1,11 +1,18 @@
 #include "AABB.hpp"
 
+#include <ThreadedLoggerForCPP/LoggerThread.hpp>
+
+#include <ThreadedLoggerForCPP/LoggerFileSystem.hpp>
+#include <ThreadedLoggerForCPP/LoggerGlobals.hpp>
+
+#include <game_performance_profiler.hpp>
 AABB::AABB(std::array<glm::vec3, 8> _points) : points(_points) {}
 AABB::AABB(std::array<glm::vec3, 8> _points, float _width, float _height,
            float _depth)
     : points(_points), width(_width), height(_height), depth(_depth) {}
 
 AABB::AABB(glm::vec3 position, float offset) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   points = {
       position,
       position + glm::vec3{offset, offset, offset},
@@ -23,6 +30,7 @@ AABB::AABB(glm::vec3 position, float offset) {
 }
 
 AABB::AABB(glm::vec3 position, float width, float height, float depth) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   points = {
       position,
       position + glm::vec3{width, height, depth},
@@ -52,6 +60,7 @@ PlayerAABB::PlayerAABB()
 BlockAABB::BlockAABB(glm::vec3 blockPosition) : AABB(blockPosition, 1.0) {}
 
 float AABB::getMinAt(int index) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   float min = (&points[0].x)[index];
 
   for (int32_t i = 1; i < points.size(); i++) {
@@ -65,6 +74,7 @@ float AABB::getMinAt(int index) {
 }
 
 float AABB::getMaxAt(int index) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   float max = (&points[0].x)[index];
 
   for (int32_t i = 1; i < points.size(); i++) {
@@ -84,6 +94,7 @@ bool AABB::intersect(AABB &aabb) {
 }
 
 glm::vec3 AABB::getPopOut(AABB &aabb) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   glm::vec3 mv(aabb.getMinX() - getMaxX(), 0, 0);
   if (std::abs(getMinX() - aabb.getMaxX()) < glm::length(mv)) {
     mv = glm::vec3(aabb.getMaxX() - getMinX(), 0, 0);

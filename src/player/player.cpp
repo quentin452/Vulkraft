@@ -4,6 +4,12 @@
 
 #include <iostream>
 
+#include <ThreadedLoggerForCPP/LoggerThread.hpp>
+
+#include <ThreadedLoggerForCPP/LoggerFileSystem.hpp>
+#include <ThreadedLoggerForCPP/LoggerGlobals.hpp>
+
+#include <game_performance_profiler.hpp>
 Player::Player(Camera &_camera,
                std::unordered_map<glm::ivec3, Chunk *> &_chunkMap)
     : camera(_camera), chunkMap(_chunkMap) {}
@@ -11,6 +17,7 @@ Player::Player(Camera &_camera,
 Player::~Player() {}
 
 void Player::update(float deltaT) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   glm::vec3 currentPosition = camera.getPosition();
   glm::vec3 currentAngle = camera.getAngle();
   glm::vec3 movement(0);
@@ -78,6 +85,7 @@ void Player::update(float deltaT) {
 }
 
 void Player::updateSpeed() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   if (flying) {
     speed = FLYING_SPEED;
   } else if (swimming) {
@@ -88,6 +96,7 @@ void Player::updateSpeed() {
 }
 
 void Player::updatePhysics() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   collision = !collision;
   gravity = !gravity;
   flying = !flying;
@@ -95,6 +104,7 @@ void Player::updatePhysics() {
 }
 
 void Player::keyEventListener(GLFWwindow *window, float deltaT) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   movements.clear();
 
   if (glfwGetKey(window, GLFW_KEY_A)) {
@@ -126,6 +136,7 @@ void Player::keyEventListener(GLFWwindow *window, float deltaT) {
 }
 
 void Player::cursorPositionEventListener(GLFWwindow *window) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   static double old_xpos = 0, old_ypos = 0;
 
   double xpos, ypos;

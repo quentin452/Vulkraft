@@ -11,7 +11,16 @@ add_subdirectory(headers)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
-file(GLOB_RECURSE sources src/*.cpp src/*.hpp)
+# Ajouter les fichiers sources avec GLOB_RECURSE
+file(GLOB_RECURSE SOURCES_GLOB "src/*.cpp" "src/*.hpp")
+
+# Ajouter les fichiers sources manuellement
+set(SOURCES_MANUAL
+    "${CMAKE_SOURCE_DIR}/headers/ThreadedLoggerForCPPV0.5.2/src/LoggerThread.cpp"
+)
+
+# Combiner les deux listes de sources
+set(SOURCES ${SOURCES_GLOB} ${SOURCES_MANUAL})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DDEBUG)
@@ -20,13 +29,17 @@ else()
     remove_definitions(-DPERFORMANCE_MONITOR)
 endif()
 
-add_executable(main ${sources})
+add_executable(main ${SOURCES})
 
 add_custom_command(TARGET main PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/shaders $<TARGET_FILE_DIR:main>/shaders)
 add_custom_command(TARGET main PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/models $<TARGET_FILE_DIR:main>/models)
 add_custom_command(TARGET main PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/textures $<TARGET_FILE_DIR:main>/textures)
 
-include_directories(headers "${CMAKE_CURRENT_SOURCE_DIR}/headers/game_performance_profiler" "${CMAKE_CURRENT_SOURCE_DIR}/headers/ThreadedLoggerForCPPV0.5.2")
+include_directories(
+    headers
+    "${CMAKE_SOURCE_DIR}/headers/game_performance_profiler"
+    "${CMAKE_SOURCE_DIR}/headers/ThreadedLoggerForCPPV0.5.2/libs/include"
+)
 
 make_directory(${CMAKE_CURRENT_BINARY_DIR}/bin/shaders)
 

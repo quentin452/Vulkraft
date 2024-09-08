@@ -22,6 +22,12 @@
 #include "../utils/perlin_noise.hpp"
 #include "chunk.hpp"
 
+#include <ThreadedLoggerForCPP/LoggerThread.hpp>
+
+#include <ThreadedLoggerForCPP/LoggerFileSystem.hpp>
+#include <ThreadedLoggerForCPP/LoggerGlobals.hpp>
+
+#include <game_performance_profiler.hpp>
 siv::PerlinNoise::seed_type Chunk::seed = 0;
 siv::PerlinNoise Chunk::perlin{0};
 
@@ -45,6 +51,7 @@ const WhiteWool *WHITE_WOOL = new WhiteWool();
 Block::Block() { type = (BlockType *)AIR; }
 
 BlockFace *Block::getFace(Direction dir) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   if (type->isDiagonal()) {
     if (diagonals.count(dir) == 0)
       return NULL;
@@ -56,6 +63,7 @@ BlockFace *Block::getFace(Direction dir) {
 }
 
 VkVertexInputBindingDescription BlockVertex::getBindingDescription() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   VkVertexInputBindingDescription bindingDescription{};
   bindingDescription.binding = 0;
   bindingDescription.stride = sizeof(BlockVertex);
@@ -66,6 +74,7 @@ VkVertexInputBindingDescription BlockVertex::getBindingDescription() {
 
 std::array<VkVertexInputAttributeDescription, 4>
 BlockVertex::getAttributeDescriptions() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
 
   attributeDescriptions[0].binding = 0;
@@ -92,12 +101,14 @@ BlockVertex::getAttributeDescriptions() {
 }
 
 bool shouldSeeFace(Block self, Block other) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   return !other.type->isOpaque &&
          (!self.type->shouldBlend() || self.type != other.type);
 }
 
 std::vector<Direction> Chunk::getVisibleFaces(int x, int y, int z,
                                               bool opaqueOnly) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   Block block = blocks[x][y][z];
 
   std::vector<Direction> faces;
@@ -180,6 +191,7 @@ std::vector<Direction> Chunk::getVisibleFaces(int x, int y, int z,
 
 void Chunk::buildBlockFace(int x, int y, int z, Direction dir,
                            bool opaqueOnly) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   Block block = blocks[x][y][z];
   BlockFace *face = block.getFace(dir);
   if (face == NULL)
@@ -245,6 +257,7 @@ void Chunk::buildBlockFace(int x, int y, int z, Direction dir,
 }
 
 void Chunk::buildBlock(int x, int y, int z, bool opaqueOnly) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   std::vector<Direction> visibleFaces = getVisibleFaces(x, y, z, opaqueOnly);
   for (const Direction &dir : visibleFaces) {
     buildBlockFace(x, y, z, dir, opaqueOnly);
@@ -252,6 +265,7 @@ void Chunk::buildBlock(int x, int y, int z, bool opaqueOnly) {
 }
 
 void Chunk::buildStructure(StructureMeta *meta) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   for (int i = 0; i < meta->size; i++) {
     glm::ivec3 pos = meta->coords[i];
     BlockType *type = meta->types[i];
@@ -261,6 +275,7 @@ void Chunk::buildStructure(StructureMeta *meta) {
 }
 
 int Chunk::sampleHeight(int x, int z, float depth) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   static const int octaves = 8;
   int minY = 8;
   float varY = 240. * depth;
@@ -273,6 +288,7 @@ int Chunk::sampleHeight(int x, int z, float depth) {
 }
 
 void Chunk::initTerrain() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   for (int x = 0; x < CHUNK_WIDTH; ++x) {
     for (int z = 0; z < CHUNK_DEPTH; ++z) {
       blocks[x][0][z].type = (BlockType *)BEDROCK;
@@ -297,6 +313,7 @@ void Chunk::initTerrain() {
 }
 
 void Chunk::initPlants() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   for (int x = 2; x < CHUNK_WIDTH - 2; ++x) {
     for (int z = 2; z < CHUNK_DEPTH - 2; ++z) {
       double noise = (float)rand() / (float)RAND_MAX;
@@ -319,6 +336,7 @@ void Chunk::initPlants() {
 }
 
 void Chunk::initLogo() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   glm::ivec3 base(0, 200, 0);
   StructureMeta meta;
   Logo::generate(&meta, base);
@@ -327,6 +345,7 @@ void Chunk::initLogo() {
 
 Chunk::Chunk(glm::ivec3 pos, const std::unordered_map<glm::ivec3, Chunk *> &m)
     : coordinates(pos), chunkMap(m) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   initTerrain();
   initPlants();
   if (pos == glm::ivec3(0)) {
@@ -347,6 +366,7 @@ std::vector<BlockVertex> Chunk::getWaterVertices() { return waterVertices; }
 std::vector<uint32_t> Chunk::getWaterIndices() { return waterIndices; }
 
 void Chunk::build() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   vertices.clear();
   indices.clear();
   for (int x = 0; x < CHUNK_WIDTH; ++x) {
@@ -366,11 +386,13 @@ void Chunk::build() {
 }
 
 void Chunk::clear() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   vertices.clear();
   indices.clear();
 }
 
 std::vector<std::pair<glm::ivec3, Chunk *>> Chunk::getNeighbors() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   std::vector<std::pair<glm::ivec3, Chunk *>> neighbors;
   const int xOff[] = {CHUNK_WIDTH, -CHUNK_WIDTH};
   const int zOff[] = {CHUNK_DEPTH, -CHUNK_DEPTH};
@@ -391,11 +413,13 @@ std::vector<std::pair<glm::ivec3, Chunk *>> Chunk::getNeighbors() {
 }
 
 void Chunk::setSeed(unsigned int seedIn) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   Chunk::seed = seedIn;
   Chunk::perlin = siv::PerlinNoise{Chunk::seed};
 }
 
 std::vector<glm::ivec3> Chunk::getBlockPositions() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   std::vector<glm::ivec3> positions;
 
   for (int x = 0; x < CHUNK_WIDTH; x++) {
@@ -412,6 +436,7 @@ std::vector<glm::ivec3> Chunk::getBlockPositions() {
 }
 
 bool Chunk::isBlockSolidLocal(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   if (position.y >= CHUNK_HEIGHT)
     return false;
 
@@ -419,10 +444,12 @@ bool Chunk::isBlockSolidLocal(glm::ivec3 position) {
 }
 
 bool Chunk::isBlockSolidGlobal(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   return isBlockSolidLocal(position - coordinates);
 }
 
 bool Chunk::isBlockBreakableLocal(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   if (position.y >= CHUNK_HEIGHT)
     return false;
 
@@ -430,22 +457,26 @@ bool Chunk::isBlockBreakableLocal(glm::ivec3 position) {
 }
 
 bool Chunk::isBlockBreakableGlobal(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   return isBlockBreakableLocal(position - coordinates);
 }
 
 glm::ivec3 Chunk::findChunkIndex(glm::vec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   return glm::ivec3((int)floor(position.x / (float)CHUNK_WIDTH) * CHUNK_WIDTH,
                     0,
                     (int)floor(position.z / (float)CHUNK_DEPTH) * CHUNK_DEPTH);
 }
 
 glm::ivec3 Chunk::findBlockIndex(glm::vec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   glm::ivec3 chunkIndex = Chunk::findChunkIndex(position);
   return glm::ivec3(floor(position.x - chunkIndex.x), floor(position.y),
                     floor(position.z - chunkIndex.z));
 }
 
 bool Chunk::destroyLocal(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   Block *block = &blocks[position.x][position.y][position.z];
   if (!block->type->isBreakable)
     return false;
@@ -457,10 +488,12 @@ bool Chunk::destroyLocal(glm::ivec3 position) {
 }
 
 bool Chunk::destroyGlobal(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   return destroyLocal(position - coordinates);
 }
 
 bool Chunk::placeLocal(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   Block *block = &blocks[position.x][position.y][position.z];
   if (block->type->isSolid)
     return false;
@@ -469,10 +502,12 @@ bool Chunk::placeLocal(glm::ivec3 position) {
 }
 
 bool Chunk::placeGlobal(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   return placeLocal(position - coordinates);
 }
 
 bool Chunk::isBlockWaterLocal(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   if (position.y >= CHUNK_HEIGHT)
     return false;
 
@@ -480,14 +515,17 @@ bool Chunk::isBlockWaterLocal(glm::ivec3 position) {
 }
 
 bool Chunk::isBlockWaterGlobal(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   return isBlockWaterLocal(position - coordinates);
 }
 
 void Chunk::spreadWater(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   blocks[position.x][position.y][position.z].type = (BlockType *)WATER;
 }
 
 bool Chunk::selectBlockType(glm::ivec3 position) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   selectedType = blocks[position.x][position.y][position.z].type;
   return false;
 }

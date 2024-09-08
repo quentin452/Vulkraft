@@ -5,6 +5,7 @@
 
 #include "../blocks/block.hpp"
 
+
 struct StructureMeta {
   int size = 0;
   std::vector<glm::ivec3> coords;

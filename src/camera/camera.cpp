@@ -1,6 +1,12 @@
 #include "camera.hpp"
 #include <algorithm>
 
+#include <ThreadedLoggerForCPP/LoggerThread.hpp>
+
+#include <ThreadedLoggerForCPP/LoggerFileSystem.hpp>
+#include <ThreadedLoggerForCPP/LoggerGlobals.hpp>
+
+#include <game_performance_profiler.hpp>
 Camera::Camera() {
   CamMat = getMatrix();
   CamDir = glm::mat3(1.0f);
@@ -19,6 +25,7 @@ void Camera::updatePosition(glm::vec3 direction) { CamPos += direction; }
 glm::vec3 Camera::getAngle() { return CamAng; }
 
 void Camera::updateAngle(double x, double y) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
 
   CamAng.y += x * rotSpeed / mouseRes;
   CamAng.x += y * rotSpeed / mouseRes;
@@ -28,11 +35,13 @@ void Camera::updateAngle(double x, double y) {
 }
 
 glm::mat4 Camera::getMatrix() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   CamMat = glm::translate(glm::transpose(glm::mat4(CamDir)), -CamPos);
   return CamMat;
 }
 
 void Camera::updateDirection() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   CamDir = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y,
                                  glm::vec3(0.0f, 1.0f, 0.0f))) *
            glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x,
@@ -42,6 +51,7 @@ void Camera::updateDirection() {
 }
 
 glm::vec3 Camera::getDirection() {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   return glm::vec3(
       glm::rotate(glm::mat4(1), CamAng.y, glm::vec3(0.f, 1.f, 0.f)) *
       glm::rotate(glm::mat4(1), CamAng.x, glm::vec3(1.f, 0.f, 0.f)) *

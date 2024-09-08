@@ -1,9 +1,16 @@
 #include "trace-ray.hpp"
 #include <iostream>
 
+#include <ThreadedLoggerForCPP/LoggerThread.hpp>
+
+#include <ThreadedLoggerForCPP/LoggerFileSystem.hpp>
+#include <ThreadedLoggerForCPP/LoggerGlobals.hpp>
+
+#include <game_performance_profiler.hpp>
 bool TraceRay::trace(TraceRayCallback callback, glm::vec3 origin,
                      glm::vec3 direction, int limit, glm::ivec3 &hitPos,
                      glm::vec3 &hitNorm) {
+  PROFILE_SCOPED(std::string("Catz-Voxel-Engine:") + ":" + __FUNCTION__)
   direction = glm::normalize(direction);
 
   glm::ivec3 current = glm::floor(origin);
