@@ -27,7 +27,7 @@
 #include <game_performance_profiler.hpp>
 
 #include "../globals.h"
-
+#include <random>
 class ChunkDrawing {
 private:
   std::unordered_map<glm::ivec3, Chunk *> chunkMap;
@@ -58,6 +58,12 @@ private:
 
   // Inserts [newChunk] vertices and indices in the global buffers
   void drawChunk(Chunk *newChunk);
+  void addNeighborsToBuild(Chunk *newChunk,
+                           std::unordered_set<Chunk *> *toBuild);
+  void processChunkData(const std::vector<BlockVertex> &vertices,
+                        const std::vector<uint32_t> &indices,
+                        std::vector<BlockVertex> &globalVertices,
+                        std::vector<uint32_t> &globalIndices);
   const int VIEW_RANGE = 2;
   const int ACTION_RANGE = 3;
 

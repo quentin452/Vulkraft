@@ -142,31 +142,41 @@ bool ChunkDrawing::loadNewVisibleChunks(
   glm::ivec3 baseChunkIndex =
       Chunk::findChunkIndex(player.getCamera().getPosition());
 
-  if (oldChunkIndex != baseChunkIndex) {
-    oldChunkIndex = baseChunkIndex;
-
-    for (int i = -VIEW_RANGE; i <= VIEW_RANGE; ++i) {
-      for (int j = -VIEW_RANGE; j <= VIEW_RANGE; ++j) {
-        glm::ivec3 curChunkIndex(baseChunkIndex.x + i * CHUNK_WIDTH,
-                                 baseChunkIndex.y,
-                                 baseChunkIndex.z + j * CHUNK_DEPTH);
-
-        if (chunkMap.find(curChunkIndex) == chunkMap.end()) {
-          if (chunkIndexesToAdd->insert(curChunkIndex).second) {
-            Chunk *newChunk = new Chunk(curChunkIndex, chunkMap);
-            chunkMap[curChunkIndex] = newChunk;
-            toBuild->insert(newChunk);
-
-            for (const auto &neighbor : newChunk->getNeighbors()) {
-              toBuild->insert(neighbor.second);
-            }
-          }
-        }
-      }
-    }
-    return true;
+  if (oldChunkIndex == baseChunkIndex) {
+    return false;
   }
-  return false;
+
+  oldChunkIndex = baseChunkIndex;
+
+  for (int i = -VIEW_RANGE; i <= VIEW_RANGE; ++i) {
+    for (int j = -VIEW_RANGE; j <= VIEW_RANGE; ++j) {
+      glm::ivec3 curChunkIndex(baseChunkIndex.x + i * CHUNK_WIDTH,
+                               baseChunkIndex.y,
+                               baseChunkIndex.z + j * CHUNK_DEPTH);
+
+      if (chunkMap.find(curChunkIndex) != chunkMap.end()) {
+        continue;
+      }
+
+      if (!chunkIndexesToAdd->insert(curChunkIndex).second) {
+        continue;
+      }
+
+      auto *newChunk = new Chunk(curChunkIndex, chunkMap);
+      chunkMap[curChunkIndex] = newChunk;
+      toBuild->insert(newChunk);
+
+      addNeighborsToBuild(newChunk, toBuild);
+    }
+  }
+  return true;
+}
+
+void ChunkDrawing::addNeighborsToBuild(Chunk *newChunk,
+                                       std::unordered_set<Chunk *> *toBuild) {
+  for (const auto &neighbor : newChunk->getNeighbors()) {
+    toBuild->insert(neighbor.second);
+  }
 }
 
 // Builds the first chunk in [toBuild]
@@ -187,14 +197,20 @@ void ChunkDrawing::initializeChunks() {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
 
   const glm::ivec3 baseChunkIndex(0, 0, 0);
-  Chunk::setSeed(rand());
+
+  // Create a random device and a random number generator
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> dis(0, std::numeric_limits<int>::max());
+
+  // Use the random number generator to set the seed
+  Chunk::setSeed(dis(gen));
   chunkMap[baseChunkIndex] = new Chunk(baseChunkIndex, chunkMap);
 
   for (auto &[index, chunk] : chunkMap) {
     chunk->build();
   }
 }
-
 // Gets the visible chunks from [chunkMap] and draws them
 void ChunkDrawing::drawVisibleChunks() {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
@@ -237,31 +253,31 @@ void ChunkDrawing::clearBuffers() {
 void ChunkDrawing::drawChunk(Chunk *newChunk) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
 
-  std::vector<BlockVertex> curVertices = newChunk->getVertices();
-  std::vector<uint32_t> curIndices = newChunk->getIndices();
+  auto &app = Globals::vulkraftApp;
 
-  size_t prevSizeIndices = Globals::vulkraftApp.indices.size();
-  Globals::vulkraftApp.indices.resize(prevSizeIndices + curIndices.size());
-  for (size_t i = 0; i < curIndices.size(); ++i) {
-    Globals::vulkraftApp.indices[prevSizeIndices + i] =
-        curIndices[i] + Globals::vulkraftApp.vertices.size();
+  // Process solid vertices and indices
+  processChunkData(newChunk->getVertices(), newChunk->getIndices(),
+                   app.vertices, app.indices);
+
+  // Process water vertices and indices
+  processChunkData(newChunk->getWaterVertices(), newChunk->getWaterIndices(),
+                   app.waterVertices, app.waterIndices);
+}
+
+void ChunkDrawing::processChunkData(const std::vector<BlockVertex> &vertices,
+                                    const std::vector<uint32_t> &indices,
+                                    std::vector<BlockVertex> &globalVertices,
+                                    std::vector<uint32_t> &globalIndices) {
+  size_t prevSizeIndices = globalIndices.size();
+  globalIndices.resize(prevSizeIndices + indices.size());
+
+  size_t vertexOffset = globalVertices.size();
+  for (size_t i = 0; i < indices.size(); ++i) {
+    globalIndices[prevSizeIndices + i] =
+        static_cast<unsigned int>(indices[i] + vertexOffset);
   }
-  Globals::vulkraftApp.vertices.insert(Globals::vulkraftApp.vertices.end(),
-                                       curVertices.begin(), curVertices.end());
 
-  std::vector<BlockVertex> curWaterVertices = newChunk->getWaterVertices();
-  std::vector<uint32_t> curWaterIndices = newChunk->getWaterIndices();
-
-  size_t prevSizeWaterIndices = Globals::vulkraftApp.waterIndices.size();
-  Globals::vulkraftApp.waterIndices.resize(prevSizeWaterIndices +
-                                           curWaterIndices.size());
-  for (size_t i = 0; i < curWaterIndices.size(); ++i) {
-    Globals::vulkraftApp.waterIndices[prevSizeWaterIndices + i] =
-        curWaterIndices[i] + Globals::vulkraftApp.waterVertices.size();
-  }
-  Globals::vulkraftApp.waterVertices.insert(
-      Globals::vulkraftApp.waterVertices.end(), curWaterVertices.begin(),
-      curWaterVertices.end());
+  globalVertices.insert(globalVertices.end(), vertices.begin(), vertices.end());
 }
 
 void ChunkDrawing::initChunks() {
