@@ -5,163 +5,160 @@
 bool ChunkDrawing::handleMouseClicks(
     std::unordered_set<glm::ivec3> *chunkIndexesToAdd) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  static bool leftPressed = false;
-  static bool rightPressed = false;
-  static bool middlePressed = false;
+
+  static std::unordered_map<int, bool> buttonStates = {
+      {GLFW_MOUSE_BUTTON_LEFT, false},
+      {GLFW_MOUSE_BUTTON_RIGHT, false},
+      {GLFW_MOUSE_BUTTON_MIDDLE, false}};
 
   bool shouldRedraw = false;
 
-  if (!leftPressed && !rightPressed && !middlePressed) {
-    if (glfwGetMouseButton(Globals::vulkraftApp.window,
-                           GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-      leftPressed = true;
-      if (handleMouseClick(GLFW_MOUSE_BUTTON_LEFT, chunkIndexesToAdd))
+  for (const auto &[button, pressed] : buttonStates) {
+    int state = glfwGetMouseButton(Globals::vulkraftApp.window, button);
+    if (state == GLFW_PRESS && !pressed) {
+      buttonStates[button] = true;
+      if (handleMouseClick(button, chunkIndexesToAdd))
         shouldRedraw = true;
-    } else if (glfwGetMouseButton(Globals::vulkraftApp.window,
-                                  GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-      rightPressed = true;
-      if (handleMouseClick(GLFW_MOUSE_BUTTON_RIGHT, chunkIndexesToAdd))
-        shouldRedraw = true;
-    } else if (glfwGetMouseButton(Globals::vulkraftApp.window,
-                                  GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) {
-      middlePressed = true;
-      handleMouseClick(GLFW_MOUSE_BUTTON_MIDDLE, chunkIndexesToAdd);
+    } else if (state == GLFW_RELEASE && pressed) {
+      buttonStates[button] = false;
     }
-  }
-
-  if (glfwGetMouseButton(Globals::vulkraftApp.window, GLFW_MOUSE_BUTTON_LEFT) ==
-      GLFW_RELEASE) {
-    leftPressed = false;
-  }
-  if (glfwGetMouseButton(Globals::vulkraftApp.window,
-                         GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE) {
-    rightPressed = false;
-  }
-  if (glfwGetMouseButton(Globals::vulkraftApp.window,
-                         GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_RELEASE) {
-    middlePressed = false;
   }
 
   return shouldRedraw;
 }
-// If [isRight] is false, destroys the block that the player is looking at
-// If [isRight] is true, places a block near the one that the player is
-// looking at Returns true if a block was destroyed or placed
+
+// Handles a mouse click event
 bool ChunkDrawing::handleMouseClick(
     int button, std::unordered_set<glm::ivec3> *chunkIndexesToAdd) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
+
   glm::ivec3 target;
   glm::vec3 norm;
   if (!rayTracePlayer(target, norm))
     return false;
 
   if (button == GLFW_MOUSE_BUTTON_RIGHT)
-    target += norm; // The real target is the adjacent block
+    target += norm;
 
   glm::ivec3 baseChunkIndex = Chunk::findChunkIndex(target);
-  Chunk *chunk = chunkMap.find(baseChunkIndex)->second;
+  auto chunkIt = chunkMap.find(baseChunkIndex);
+  if (chunkIt == chunkMap.end())
+    return false;
+
+  Chunk *chunk = chunkIt->second;
   glm::ivec3 blockIndex = Chunk::findBlockIndex(target);
 
-  if (button == GLFW_MOUSE_BUTTON_LEFT && !chunk->destroyLocal(blockIndex))
-    return false;
-  if (button == GLFW_MOUSE_BUTTON_RIGHT && !chunk->placeLocal(blockIndex))
-    return false;
-  if (button == GLFW_MOUSE_BUTTON_MIDDLE)
-    return chunk->selectBlockType(blockIndex);
-  chunkIndexesToAdd->insert(baseChunkIndex);
-
-  std::vector<Chunk *> toBuild = {chunk};
-  bool waterSpreaded =
-      button == GLFW_MOUSE_BUTTON_RIGHT ||
-      spreadWater(chunk, chunk, target, target + glm::ivec3(0, 1, 0));
-
-  const std::vector<glm::ivec3> directions = {
-      glm::ivec3(1, 0, 0),
-      glm::ivec3(-1, 0, 0),
-      glm::ivec3(0, 0, 1),
-      glm::ivec3(0, 0, -1),
-  };
-
-  for (auto direction : directions) {
-    glm::ivec3 source = target + direction;
-    glm::ivec3 nearChunkIndex = Chunk::findChunkIndex(source);
-    glm::ivec3 nearIndex = Chunk::findBlockIndex(source);
-
-    Chunk *neighbor;
-    if (nearChunkIndex != baseChunkIndex) {
-      neighbor = chunkMap.find(nearChunkIndex)->second;
-      toBuild.push_back(neighbor);
-    } else {
-      neighbor = chunk;
-    }
-
-    waterSpreaded =
-        waterSpreaded || spreadWater(chunk, neighbor, blockIndex, nearIndex);
+  bool actionResult = false;
+  if (button == GLFW_MOUSE_BUTTON_LEFT) {
+    actionResult = chunk->destroyLocal(blockIndex);
+  } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+    actionResult = chunk->placeLocal(blockIndex);
+  } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+    actionResult = chunk->selectBlockType(blockIndex);
   }
 
-  for (auto &chunk : toBuild)
-    chunk->build();
-  return true;
+  if (actionResult) {
+    chunkIndexesToAdd->insert(baseChunkIndex);
+
+    std::vector<Chunk *> toBuild = {chunk};
+    bool waterSpreaded =
+        (button == GLFW_MOUSE_BUTTON_RIGHT) ||
+        spreadWater(chunk, chunk, target, target + glm::ivec3(0, 1, 0));
+
+    const std::vector<glm::ivec3> directions = {
+        glm::ivec3(1, 0, 0),
+        glm::ivec3(-1, 0, 0),
+        glm::ivec3(0, 0, 1),
+        glm::ivec3(0, 0, -1),
+    };
+
+    for (const auto &direction : directions) {
+      glm::ivec3 source = target + direction;
+      glm::ivec3 nearChunkIndex = Chunk::findChunkIndex(source);
+      glm::ivec3 nearIndex = Chunk::findBlockIndex(source);
+
+      Chunk *neighbor = nullptr;
+      if (nearChunkIndex != baseChunkIndex) {
+        auto neighborIt = chunkMap.find(nearChunkIndex);
+        if (neighborIt != chunkMap.end()) {
+          neighbor = neighborIt->second;
+          toBuild.push_back(neighbor);
+        }
+      } else {
+        neighbor = chunk;
+      }
+
+      if (neighbor) {
+        waterSpreaded = waterSpreaded ||
+                        spreadWater(chunk, neighbor, blockIndex, nearIndex);
+      }
+    }
+
+    for (Chunk *c : toBuild) {
+      c->build();
+    }
+    return true;
+  }
+  return false;
 }
 
-// Traces the line of sight of the player and fills [target] and [norm] with
-// the details of the hit
-// Returns true if a hit occurred
+// Traces the line of sight of the player
 bool ChunkDrawing::rayTracePlayer(glm::ivec3 &target, glm::vec3 &norm) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
+
   Camera camera = player.getCamera();
   glm::vec3 position = camera.getPosition();
   glm::vec3 direction = camera.getDirection() * -1.f;
 
   return TraceRay::trace(
       [&](glm::ivec3 position) -> bool {
-        glm::ivec3 baseChunkIndex = Chunk::findChunkIndex(position);
-        Chunk *chunk = chunkMap.find(baseChunkIndex)->second;
-        return chunk->isBlockBreakableGlobal(position);
+        auto chunkIt = chunkMap.find(Chunk::findChunkIndex(position));
+        if (chunkIt != chunkMap.end()) {
+          return chunkIt->second->isBlockBreakableGlobal(position);
+        }
+        return false;
       },
       position, direction, ACTION_RANGE, target, norm);
 }
 
 // Tries to spread water from [sourceBlock] to [emptyBlock]
-// Returns true if [emptyBlock] was filled
 bool ChunkDrawing::spreadWater(Chunk *emptyChunk, Chunk *sourceChunk,
                                glm::ivec3 emptyBlock, glm::ivec3 sourceBlock) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  if (!sourceChunk->isBlockWaterLocal(sourceBlock))
-    return false;
-  emptyChunk->spreadWater(emptyBlock);
-  return true;
+  if (sourceChunk->isBlockWaterLocal(sourceBlock)) {
+    emptyChunk->spreadWater(emptyBlock);
+    return true;
+  }
+  return false;
 }
 
-// Loads the new visible chunks in [chunksIndexesToAdd] and [toBuild]
-// Returns true if the player entered a new chunk
+// Loads the new visible chunks
 bool ChunkDrawing::loadNewVisibleChunks(
     std::unordered_set<glm::ivec3> *chunkIndexesToAdd,
     std::unordered_set<Chunk *> *toBuild) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  static glm::ivec3 oldChunkIndex(
-      -1, 0, -1); // Any value different from (0, 0, 0) should be fine
+
+  static glm::ivec3 oldChunkIndex(-1, 0, -1);
   glm::ivec3 baseChunkIndex =
       Chunk::findChunkIndex(player.getCamera().getPosition());
 
   if (oldChunkIndex != baseChunkIndex) {
     oldChunkIndex = baseChunkIndex;
+
     for (int i = -VIEW_RANGE; i <= VIEW_RANGE; ++i) {
       for (int j = -VIEW_RANGE; j <= VIEW_RANGE; ++j) {
         glm::ivec3 curChunkIndex(baseChunkIndex.x + i * CHUNK_WIDTH,
                                  baseChunkIndex.y,
                                  baseChunkIndex.z + j * CHUNK_DEPTH);
+
         if (chunkMap.find(curChunkIndex) == chunkMap.end()) {
-          if (chunkIndexesToAdd->find(curChunkIndex) ==
-              chunkIndexesToAdd->end()) {
-            chunkIndexesToAdd->insert(curChunkIndex);
+          if (chunkIndexesToAdd->insert(curChunkIndex).second) {
             Chunk *newChunk = new Chunk(curChunkIndex, chunkMap);
-            chunkMap.insert({curChunkIndex, newChunk});
+            chunkMap[curChunkIndex] = newChunk;
             toBuild->insert(newChunk);
-            std::vector<std::pair<glm::ivec3, Chunk *>> neighbors =
-                newChunk->getNeighbors();
-            for (auto &c : neighbors) {
-              toBuild->insert(c.second);
+
+            for (const auto &neighbor : newChunk->getNeighbors()) {
+              toBuild->insert(neighbor.second);
             }
           }
         }
@@ -173,15 +170,14 @@ bool ChunkDrawing::loadNewVisibleChunks(
 }
 
 // Builds the first chunk in [toBuild]
-// Returns false if no build occurred
 bool ChunkDrawing::buildNextChunk(std::unordered_set<Chunk *> *toBuild) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
+
   if (toBuild->empty())
     return false;
 
-  auto curChunkIter = toBuild->begin();
-  Chunk *curChunk = *curChunkIter;
-  toBuild->erase(curChunkIter);
+  Chunk *curChunk = *toBuild->begin();
+  toBuild->erase(toBuild->begin());
   curChunk->build();
   return true;
 }
@@ -189,21 +185,21 @@ bool ChunkDrawing::buildNextChunk(std::unordered_set<Chunk *> *toBuild) {
 // Initializes and builds the first chunks
 void ChunkDrawing::initializeChunks() {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  const glm::ivec3 baseChunkIndex = glm::ivec3(0, 0, 0);
 
+  const glm::ivec3 baseChunkIndex(0, 0, 0);
   Chunk::setSeed(rand());
-  chunkMap.insert(
-      std::pair(baseChunkIndex, new Chunk(baseChunkIndex, chunkMap)));
+  chunkMap[baseChunkIndex] = new Chunk(baseChunkIndex, chunkMap);
 
-  for (auto &iter : chunkMap) {
-    iter.second->build();
+  for (auto &[index, chunk] : chunkMap) {
+    chunk->build();
   }
 }
 
 // Gets the visible chunks from [chunkMap] and draws them
 void ChunkDrawing::drawVisibleChunks() {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  const glm::ivec3 baseChunkIndex =
+
+  glm::ivec3 baseChunkIndex =
       Chunk::findChunkIndex(player.getCamera().getPosition());
   std::vector<Chunk *> visibleChunks;
 
@@ -212,22 +208,23 @@ void ChunkDrawing::drawVisibleChunks() {
       glm::ivec3 curChunkIndex(baseChunkIndex.x + i * CHUNK_WIDTH,
                                baseChunkIndex.y,
                                baseChunkIndex.z + j * CHUNK_DEPTH);
-      auto iter = chunkMap.find(curChunkIndex);
-      if (iter != chunkMap.end()) {
-        visibleChunks.push_back(iter->second);
+      auto it = chunkMap.find(curChunkIndex);
+      if (it != chunkMap.end()) {
+        visibleChunks.push_back(it->second);
       }
     }
   }
 
   clearBuffers();
-  for (auto &iter : visibleChunks) {
-    drawChunk(iter);
+  for (Chunk *chunk : visibleChunks) {
+    drawChunk(chunk);
   }
 }
 
-/// Clears the global vertex and index buffers
+// Clears the global vertex and index buffers
 void ChunkDrawing::clearBuffers() {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
+
   Globals::vulkraftApp.vertices.clear();
   Globals::vulkraftApp.indices.clear();
   Globals::vulkraftApp.waterVertices.clear();
@@ -239,14 +236,15 @@ void ChunkDrawing::clearBuffers() {
 // Inserts [newChunk] vertices and indices in the global buffers
 void ChunkDrawing::drawChunk(Chunk *newChunk) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
+
   std::vector<BlockVertex> curVertices = newChunk->getVertices();
   std::vector<uint32_t> curIndices = newChunk->getIndices();
 
-  Globals::vulkraftApp.indices.reserve(Globals::vulkraftApp.indices.size() +
-                                       curIndices.size());
-  for (int i = 0; i < curIndices.size(); ++i) {
-    Globals::vulkraftApp.indices.push_back(
-        curIndices[i] + Globals::vulkraftApp.vertices.size());
+  size_t prevSizeIndices = Globals::vulkraftApp.indices.size();
+  Globals::vulkraftApp.indices.resize(prevSizeIndices + curIndices.size());
+  for (size_t i = 0; i < curIndices.size(); ++i) {
+    Globals::vulkraftApp.indices[prevSizeIndices + i] =
+        curIndices[i] + Globals::vulkraftApp.vertices.size();
   }
   Globals::vulkraftApp.vertices.insert(Globals::vulkraftApp.vertices.end(),
                                        curVertices.begin(), curVertices.end());
@@ -254,11 +252,12 @@ void ChunkDrawing::drawChunk(Chunk *newChunk) {
   std::vector<BlockVertex> curWaterVertices = newChunk->getWaterVertices();
   std::vector<uint32_t> curWaterIndices = newChunk->getWaterIndices();
 
-  Globals::vulkraftApp.waterIndices.reserve(
-      Globals::vulkraftApp.waterIndices.size() + curWaterIndices.size());
-  for (int i = 0; i < curWaterIndices.size(); ++i) {
-    Globals::vulkraftApp.waterIndices.push_back(
-        curWaterIndices[i] + Globals::vulkraftApp.waterVertices.size());
+  size_t prevSizeWaterIndices = Globals::vulkraftApp.waterIndices.size();
+  Globals::vulkraftApp.waterIndices.resize(prevSizeWaterIndices +
+                                           curWaterIndices.size());
+  for (size_t i = 0; i < curWaterIndices.size(); ++i) {
+    Globals::vulkraftApp.waterIndices[prevSizeWaterIndices + i] =
+        curWaterIndices[i] + Globals::vulkraftApp.waterVertices.size();
   }
   Globals::vulkraftApp.waterVertices.insert(
       Globals::vulkraftApp.waterVertices.end(), curWaterVertices.begin(),
@@ -292,7 +291,7 @@ void ChunkDrawing::updateUniform(float &delta,
     shouldRedraw = true;
   } else if (shouldRedraw) {
     drawVisibleChunks();
-    if (vertices.size()) {
+    if (!vertices.empty()) {
       curBuffer = (curBuffer + 1) % MAX_FRAMES_IN_FLIGHT;
       Globals::vulkraftApp.updateVertexBuffer();
       Globals::vulkraftApp.updateIndexBuffer();

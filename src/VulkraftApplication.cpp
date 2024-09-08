@@ -283,9 +283,9 @@ VkResult VulkraftApplication::CreateDebugUtilsMessengerEXT(
   }
 }
 
-void VulkraftApplication::DestroyDebugUtilsMessengerEXT(VkInstance instance,
-                                   VkDebugUtilsMessengerEXT debugMessenger,
-                                   const VkAllocationCallbacks *pAllocator) {
+void VulkraftApplication::DestroyDebugUtilsMessengerEXT(
+    VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
+    const VkAllocationCallbacks *pAllocator) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
       instance, "vkDestroyDebugUtilsMessengerEXT");
