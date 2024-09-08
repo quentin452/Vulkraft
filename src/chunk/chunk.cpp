@@ -245,10 +245,8 @@ int Chunk::sampleHeight(int x, int z, float depth) {
   static const int octaves = 8;
   int minY = 8;
   float varY = 240. * depth;
-
   float dx = (float)(x + coordinates.x) / (100.);
   float dz = (float)(z + coordinates.z) / (100.);
-
   const float noise = varY * perlin.normalizedOctave2D_01(dx, dz, octaves);
   return std::clamp(minY + (int)noise, 0, CHUNK_HEIGHT - 1);
 }
@@ -390,15 +388,13 @@ void Chunk::setSeed(unsigned int seedIn) {
 std::vector<glm::ivec3> Chunk::getBlockPositions() {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   std::vector<glm::ivec3> positions;
-  positions.reserve(CHUNK_WIDTH * CHUNK_HEIGHT *
-                    CHUNK_DEPTH);
+  positions.reserve(CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_DEPTH);
   for (int x = 0; x < CHUNK_WIDTH; ++x) {
     for (int y = 0; y < CHUNK_HEIGHT; ++y) {
       for (int z = 0; z < CHUNK_DEPTH; ++z) {
         const Block &block = blocks[x][y][z];
-        if (block.type->isSolid) {
+        if (block.type->isSolid)
           positions.push_back(coordinates + glm::ivec3(x, y, z));
-        }
       }
     }
   }
@@ -406,63 +402,49 @@ std::vector<glm::ivec3> Chunk::getBlockPositions() {
 }
 
 bool Chunk::isBlockSolidLocal(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  if (position.y >= CHUNK_HEIGHT)
-    return false;
-
-  return blocks[position.x][position.y][position.z].type->isSolid;
+  return position.y < CHUNK_HEIGHT &&
+         blocks[position.x][position.y][position.z].type->isSolid;
 }
 
 bool Chunk::isBlockSolidGlobal(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   return isBlockSolidLocal(position - coordinates);
 }
 
 bool Chunk::isBlockBreakableLocal(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  if (position.y >= CHUNK_HEIGHT)
-    return false;
-
-  return blocks[position.x][position.y][position.z].type->isBreakable;
+  return position.y < CHUNK_HEIGHT &&
+         blocks[position.x][position.y][position.z].type->isBreakable;
 }
 
 bool Chunk::isBlockBreakableGlobal(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   return isBlockBreakableLocal(position - coordinates);
 }
 
 glm::ivec3 Chunk::findChunkIndex(glm::vec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  return glm::ivec3((int)floor(position.x / (float)CHUNK_WIDTH) * CHUNK_WIDTH,
-                    0,
-                    (int)floor(position.z / (float)CHUNK_DEPTH) * CHUNK_DEPTH);
+  return glm::ivec3(floor(position.x / CHUNK_WIDTH) * CHUNK_WIDTH, 0,
+                    floor(position.z / CHUNK_DEPTH) * CHUNK_DEPTH);
 }
 
 glm::ivec3 Chunk::findBlockIndex(glm::vec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  glm::ivec3 chunkIndex = Chunk::findChunkIndex(position);
+  glm::ivec3 chunkIndex = findChunkIndex(position);
   return glm::ivec3(floor(position.x - chunkIndex.x), floor(position.y),
                     floor(position.z - chunkIndex.z));
 }
+
 bool Chunk::destroyLocal(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   Block &block = blocks[position.x][position.y][position.z];
   if (!block.type->isBreakable)
     return false;
   block.type = (BlockType *)AIR;
-  Block &aboveBlock = blocks[position.x][position.y + 1][position.z];
-  if (aboveBlock.type == BUSH)
-    aboveBlock.type = (BlockType *)AIR;
+  if (blocks[position.x][position.y + 1][position.z].type == BUSH)
+    blocks[position.x][position.y + 1][position.z].type = (BlockType *)AIR;
   return true;
 }
 
 bool Chunk::destroyGlobal(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   return destroyLocal(position - coordinates);
 }
 
 bool Chunk::placeLocal(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   Block *block = &blocks[position.x][position.y][position.z];
   if (block->type->isSolid)
     return false;
@@ -471,30 +453,23 @@ bool Chunk::placeLocal(glm::ivec3 position) {
 }
 
 bool Chunk::placeGlobal(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   return placeLocal(position - coordinates);
 }
 
 bool Chunk::isBlockWaterLocal(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
-  if (position.y >= CHUNK_HEIGHT)
-    return false;
-
-  return blocks[position.x][position.y][position.z].type == WATER;
+  return position.y < CHUNK_HEIGHT &&
+         blocks[position.x][position.y][position.z].type == WATER;
 }
 
 bool Chunk::isBlockWaterGlobal(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   return isBlockWaterLocal(position - coordinates);
 }
 
 void Chunk::spreadWater(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   blocks[position.x][position.y][position.z].type = (BlockType *)WATER;
 }
 
 bool Chunk::selectBlockType(glm::ivec3 position) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__)
   selectedType = blocks[position.x][position.y][position.z].type;
   return false;
 }
