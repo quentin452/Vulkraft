@@ -102,42 +102,30 @@ bool shouldSeeFace(Block self, Block other) {
 }
 std::vector<Direction> Chunk::getVisibleFaces(int x, int y, int z,
                                               bool opaqueOnly) {
-  PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__);
   Block block = blocks[x][y][z];
-  // Early exit if block is not visible or blending conditions are not met
   if (!block.type->isVisible() || (opaqueOnly && block.type->shouldBlend()) ||
       (!opaqueOnly && !block.type->shouldBlend())) {
     return {};
   }
+
   std::vector<Direction> faces;
   auto checkFace = [&](int nx, int ny, int nz, Direction dir) {
     if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_WIDTH || ny >= CHUNK_HEIGHT ||
         nz >= CHUNK_DEPTH) {
       glm::ivec3 adjChunkPos = coordinates;
-      if (nx < 0) {
-        adjChunkPos.x -= CHUNK_WIDTH;
-        nx = CHUNK_WIDTH - 1;
-      }
-      if (nx >= CHUNK_WIDTH) {
-        adjChunkPos.x += CHUNK_WIDTH;
-        nx = 0;
-      }
-      if (ny < 0) {
-        adjChunkPos.y -= CHUNK_HEIGHT;
-        ny = CHUNK_HEIGHT - 1;
-      }
-      if (ny >= CHUNK_HEIGHT) {
-        adjChunkPos.y += CHUNK_HEIGHT;
-        ny = 0;
-      }
-      if (nz < 0) {
-        adjChunkPos.z -= CHUNK_DEPTH;
-        nz = CHUNK_DEPTH - 1;
-      }
-      if (nz >= CHUNK_DEPTH) {
-        adjChunkPos.z += CHUNK_DEPTH;
-        nz = 0;
-      }
+      if (nx < 0)
+        adjChunkPos.x -= CHUNK_WIDTH, nx = CHUNK_WIDTH - 1;
+      if (nx >= CHUNK_WIDTH)
+        adjChunkPos.x += CHUNK_WIDTH, nx = 0;
+      if (ny < 0)
+        adjChunkPos.y -= CHUNK_HEIGHT, ny = CHUNK_HEIGHT - 1;
+      if (ny >= CHUNK_HEIGHT)
+        adjChunkPos.y += CHUNK_HEIGHT, ny = 0;
+      if (nz < 0)
+        adjChunkPos.z -= CHUNK_DEPTH, nz = CHUNK_DEPTH - 1;
+      if (nz >= CHUNK_DEPTH)
+        adjChunkPos.z += CHUNK_DEPTH, nz = 0;
+
       auto iter = chunkMap.find(adjChunkPos);
       if (iter != chunkMap.end() &&
           shouldSeeFace(block, iter->second->blocks[nx][ny][nz])) {
@@ -147,7 +135,7 @@ std::vector<Direction> Chunk::getVisibleFaces(int x, int y, int z,
       faces.push_back(dir);
     }
   };
-  // Check border faces if SHOW_CHUNK_BORDER is true
+
   if (SHOW_CHUNK_BORDER) {
     if (x == 0)
       faces.push_back(Direction::West);
@@ -162,15 +150,17 @@ std::vector<Direction> Chunk::getVisibleFaces(int x, int y, int z,
     if (z == CHUNK_DEPTH - 1)
       faces.push_back(Direction::North);
   }
-  // Check adjacent blocks
+
   checkFace(x - 1, y, z, Direction::West);
   checkFace(x + 1, y, z, Direction::East);
   checkFace(x, y - 1, z, Direction::Down);
   checkFace(x, y + 1, z, Direction::Up);
   checkFace(x, y, z - 1, Direction::South);
   checkFace(x, y, z + 1, Direction::North);
+
   return faces;
 }
+
 void Chunk::buildBlockFace(int x, int y, int z, Direction dir,
                            bool opaqueOnly) {
   PROFILE_SCOPED(std::string("Vulkraft:") + ":" + __FUNCTION__);
