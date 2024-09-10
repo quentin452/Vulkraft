@@ -1,0 +1,79 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-ThreadedLoggerForCPP-release",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-Command",
+                "if (!(Test-Path ${workspaceFolder}/build)) { mkdir ${workspaceFolder}/build };",
+                "cd ${workspaceFolder};",
+                "cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_STANDARD=17;",
+                "cmake --build build --config Release;",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "build-ThreadedLoggerForCPP-debug",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-Command",
+                "if (!(Test-Path ${workspaceFolder}/build)) { mkdir ${workspaceFolder}/build };",
+                "cd ${workspaceFolder};",
+                "cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_STANDARD=17;",
+                "cmake --build build --config Debug;",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "run-ThreadedLoggerForCPP-release",
+            "type": "process",
+            "command": "${workspaceFolder}/build/Release/ThreadedLoggerForCPP.exe",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "dependsOn": [
+                "build-ThreadedLoggerForCPP-release"
+            ]
+        },
+        {
+            "label": "run-ThreadedLoggerForCPP-debug",
+            "type": "process",
+            "command": "${workspaceFolder}/build/Debug/ThreadedLoggerForCPP.exe",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "dependsOn": [
+                "build-ThreadedLoggerForCPP-debug"
+            ]
+        }
+    ]
+}

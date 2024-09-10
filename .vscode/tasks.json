@@ -1,0 +1,79 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-CG_Project-release",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-Command",
+                "if (!(Test-Path ${workspaceFolder}/build)) { mkdir ${workspaceFolder}/build };",
+                "cd ${workspaceFolder};",
+                "cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON  -DCMAKE_CXX_FLAGS=\"/MP\" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17;",
+                "cmake --build build --config Release;",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "build-CG_Project-debug",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-Command",
+                "if (!(Test-Path ${workspaceFolder}/build)) { mkdir ${workspaceFolder}/build };",
+                "cd ${workspaceFolder};",
+                "cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON  -DCMAKE_CXX_FLAGS=\"/MP\" -DCMAKE_BUILD_TYPE=Debug -DPERFORMANCE_MONITOR=1 -DCMAKE_CXX_STANDARD=17;",
+                "cmake --build build --config Debug;",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "run-CG_Project-release",
+            "type": "process",
+            "command": "${workspaceFolder}/build/bin/Release/main.exe",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "dependsOn": [
+                "build-CG_Project-release"
+            ]
+        },
+        {
+            "label": "run-CG_Project-debug",
+            "type": "process",
+            "command": "${workspaceFolder}/build/bin/Debug/main.exe",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "dependsOn": [
+                "build-CG_Project-debug"
+            ]
+        }
+    ]
+}
